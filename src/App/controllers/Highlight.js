@@ -50,8 +50,27 @@ class Highlight {
     const user_id = req.params.id;
     const listHighlight = await HighlightModal.find({
       user_id: user_id,
-    });
-    if (listHighlight) res.json(listHighlight);
+    }).populate("user_id").populate('categories');
+
+    if (listHighlight.length > 0){
+      const newListHighLight = await Promise.all(
+        listHighlight.map(async (item) => {
+          // Lấy danh sách HighlightDetail dựa trên highlight_id của mỗi item
+          const newListHighLightDetail = await HighlightDetailModal.find({
+            highlight_id: item._id,
+          });
+
+          // Tạo đối tượng mới với thông tin được kết hợp
+          const enhancedItem = {
+            ...item.toObject(),
+            newListHighLightDetail: newListHighLightDetail,
+          };
+
+          return enhancedItem;
+        })
+      );
+      res.json(newListHighLight);
+    } 
   }
 }
 
